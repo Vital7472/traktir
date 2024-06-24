@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра про бегущего динозаврика</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+        #jumpButton, #restartButton {
+            display: block;
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #jumpButton:hover, #restartButton:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <button id="jumpButton">Прыжок</button>
+    <button id="restartButton">Начать сначала</button>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let dino = {
+            x: 50,
+            y: canvas.height - 50,
+            width: 120,
+            height: 120,
+            jumping: false,
+            jumpHeight: 150,
+            jumpCount: 0,
+            jumpSpeed: 0.9,  // Initial jump speed (jumps per second)
+            minJumpSpeed: 0.5,  // Minimum jump speed (slowest jump: 3 seconds)
+            maxJumpSpeed: 2.5  // Maximum jump speed (fastest jump: 0.4 seconds)
+        };
+
+        const dinoImg = new Image();
+        dinoImg.src = '123.png';
+
+        const chairImg = new Image();
+        chairImg.src = '321.png';
+
+        const backgroundImg = new Image();
+        backgroundImg.src = '2323.png';
+
+        let obstacles = [];
+        let gameSpeed = 6;  // Initial game speed
+        let score = 0;
+        let distanceSinceLastObstacle = 0;
+        const minObstacleDistance = 400;
+        let gameRunning = true;
+
+        function drawDino() {
+            if (dinoImg.complete && dinoImg.naturalHeight !== 0) {
+                ctx.drawImage(dinoImg, dino.x, dino.y - dino.height, dino.width, dino.height);
+            } else {
+                ctx.fillStyle = 'green';
+                ctx.fillRect(dino.x, dino.y - dino.height, dino.width, dino.height);
+            }
+        }
+
+        function jump() {
+            if (!dino.jumping) {
+                dino.jumping = true;
+                dino.jumpCount = 0;
+            }
+        }
+
+        function createObstacle() {
+            const obstacle = {
+                x: canvas.width,
+                y: canvas.height - 50,
+                width: 40,
+                height: 80
+            };
+            obstacles.push(obstacle);
+            distanceSinceLastObstacle = 0;
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                if (chairImg.complete && chairImg.naturalHeight !== 0) {
+                    ctx.drawImage(chairImg, obstacle.x, obstacle.y - obstacle.height, obstacle.width, obstacle.height);
+                } else {
+                    ctx.fillStyle = 'brown';
+                    ctx.fillRect(obstacle.x, obstacle.y - obstacle.height, obstacle.width, obstacle.height);
+                }
+            });
+        }
+
+        function updateObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.x -= gameSpeed;
+            });
+
+            distanceSinceLastObstacle += gameSpeed;
+
+            if (obstacles.length > 0 && obstacles[0].x < -40) {
+                obstacles.shift();
+                score++;
+            }
+
+            if (distanceSinceLastObstacle >= minObstacleDistance && Math.random() < 0.02) {
+                createObstacle();
+            }
+        }
+
+        function checkCollision() {
+            return obstacles.some(obstacle => 
+                dino.x < obstacle.x + obstacle.width &&
+                dino.x + dino.width > obstacle.x &&
+                dino.y - dino.height < obstacle.y &&
+                dino.y > obstacle.y - obstacle.height
+            );
+        }
+
+        function drawBackground() {
+            if (backgroundImg.complete && backgroundImg.naturalHeight !== 0) {
+                ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBackground();
+
+            if (dino.jumping) {
+                const jumpDuration = 60 / dino.jumpSpeed;
+                if (dino.jumpCount < jumpDuration / 2) {
+                    dino.y -= dino.jumpHeight / (jumpDuration / 2);
+                } else if (dino.jumpCount < jumpDuration) {
+                    dino.y += dino.jumpHeight / (jumpDuration / 2);
+                } else {
+                    dino.jumping = false;
+                }
+                dino.jumpCount++;
+            }
+
+            updateObstacles();
+            drawObstacles();
+            drawDino();
+
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Счет: ${score}`, 10, 30);
+            ctx.fillText(`Скорость игры: ${gameSpeed}`, 10, 60);
+            ctx.fillText(`Скорость прыжка: ${dino.jumpSpeed.toFixed(1)}`, 10, 90);
+
+            if (checkCollision()) {
+                ctx.fillStyle = 'red';
+                ctx.font = '40px Arial';
+                ctx.fillText('Игра окончена!', canvas.width / 2 - 100, canvas.height / 2);
+                gameRunning = false;
+                return;
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        function restartGame() {
+            dino = {
+                x: 50,
+                y: canvas.height - 50,
+                width: 150,
+                height: 150,
+                jumping: false,
+                jumpHeight: 150,
+                jumpCount: 0,
+                jumpSpeed: 0.9,  // Reset jump speed to 0.9
+                minJumpSpeed: 0.5,
+                maxJumpSpeed: 2.5
+            };
+            obstacles = [];
+            gameSpeed = 6;  // Reset game speed to 6
+            score = 0;
+            distanceSinceLastObstacle = 0;
+            gameRunning = true;
+            update();
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                jump();
+            } else if (event.code === 'ArrowUp') {
+                dino.jumpSpeed = Math.min(dino.jumpSpeed + 0.1, dino.maxJumpSpeed);
+            } else if (event.code === 'ArrowDown') {
+                dino.jumpSpeed = Math.max(dino.jumpSpeed - 0.1, dino.minJumpSpeed);
+            } else if (event.code === 'ArrowRight') {
+                gameSpeed = Math.min(gameSpeed + 1, 10);
+            } else if (event.code === 'ArrowLeft') {
+                gameSpeed = Math.max(gameSpeed - 1, 1);
+            }
+        });
+
+        document.getElementById('jumpButton').addEventListener('click', () => {
+            jump();
+        });
+
+        document.getElementById('restartButton').addEventListener('click', () => {
+            restartGame();
+        });
+
+        backgroundImg.onload = () => {
+            update();
+        };
+
+        backgroundImg.onerror = (e) => {
+            console.error('Ошибка при загрузке фонового изображения:', e);
+            update();
+        };
+    </script>
+</body>
+</html>
