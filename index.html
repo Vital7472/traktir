@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра про бегущего динозаврика</title>
+    <title>Гриль Ермолаевъ Таверна - Игра</title>
     <style>
         body {
             margin: 0;
@@ -16,96 +16,114 @@
             height: 100vh;
             background-color: #f0f0f0;
         }
+        #gameContainer {
+            position: relative;
+            width: 480px;
+            height: 800px;
+        }
         canvas {
-            border: 1px solid black;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #gameButtons {
+            position: absolute;
+            bottom: -40px;
+            left: 0px;
+            right: 0px;
+            display: flex;
+            justify-content: space-between;
         }
         #jumpButton, #restartButton {
-            display: block;
-            margin: 10px;
-            padding: 10px 20px;
-            font-size: 20px;
-            background-color: #4CAF50;
-            color: white;
+            background: none;
             border: none;
-            border-radius: 5px;
+            padding: 0;
             cursor: pointer;
         }
-        #jumpButton:hover, #restartButton:hover {
-            background-color: #45a049;
+        #jumpButton img {
+            width: 268px;
+            height: 111px;
+        }
+        #restartButton img {
+            width: 212px;
+            height: 111px;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
-    <button id="jumpButton">Прыжок</button>
-    <button id="restartButton">Начать сначала</button>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="480" height="800"></canvas>
+        <div id="gameButtons">
+            <button id="restartButton"><img src="4.png" alt="Еще раз"></button>
+            <button id="jumpButton"><img src="3.png" alt="Прыжок"></button>
+        </div>
+    </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        let dino = {
-            x: 50,
-            y: canvas.height - 50,
-            width: 120,
-            height: 120,
+        let player = {
+            x: 30,
+            y: canvas.height - 170,
+            width: 100,
+            height: 300,
             jumping: false,
-            jumpHeight: 150,
+            jumpHeight: 250,
             jumpCount: 0,
-            jumpSpeed: 0.9,  // Initial jump speed (jumps per second)
-            minJumpSpeed: 0.5,  // Minimum jump speed (slowest jump: 3 seconds)
-            maxJumpSpeed: 2.5  // Maximum jump speed (fastest jump: 0.4 seconds)
+            jumpDuration: 100 // Увеличиваем продолжительность прыжка
         };
 
-        const dinoImg = new Image();
-        dinoImg.src = '123.png';
+        const playerImg = new Image();
+        playerImg.src = '1.png';
 
-        const chairImg = new Image();
-        chairImg.src = '321.png';
+        const obstacleImg = new Image();
+        obstacleImg.src = '2.png';
 
         const backgroundImg = new Image();
-        backgroundImg.src = '2323.png';
+        backgroundImg.src = '5.png';
 
         let obstacles = [];
-        let gameSpeed = 6;  // Initial game speed
+        let gameSpeed = 6;
         let score = 0;
-        let distanceSinceLastObstacle = 0;
-        const minObstacleDistance = 400;
         let gameRunning = true;
 
-        function drawDino() {
-            if (dinoImg.complete && dinoImg.naturalHeight !== 0) {
-                ctx.drawImage(dinoImg, dino.x, dino.y - dino.height, dino.width, dino.height);
-            } else {
-                ctx.fillStyle = 'green';
-                ctx.fillRect(dino.x, dino.y - dino.height, dino.width, dino.height);
+        let minObstacleDistance = 150; // Минимальное расстояние между препятствиями
+        let maxObstacleDistance = 350; // Максимальное расстояние между препятствиями
+        let lastObstacleX = 0;
+
+        function drawPlayer() {
+            if (playerImg.complete) {
+                ctx.drawImage(playerImg, player.x, player.y - player.height, player.width, player.height);
             }
         }
 
         function jump() {
-            if (!dino.jumping) {
-                dino.jumping = true;
-                dino.jumpCount = 0;
+            if (!player.jumping) {
+                player.jumping = true;
+                player.jumpCount = 0;
             }
         }
 
         function createObstacle() {
+            const obstacleHeight = 160;
+            const obstacleY = canvas.height - 160;
+            const obstacleWidth = 80;
+            const randomX = canvas.width + Math.random() * (maxObstacleDistance - minObstacleDistance) + minObstacleDistance;
+            
             const obstacle = {
-                x: canvas.width,
-                y: canvas.height - 50,
-                width: 40,
-                height: 80
+                x: lastObstacleX + randomX,
+                y: obstacleY,
+                width: obstacleWidth,
+                height: obstacleHeight
             };
+            lastObstacleX = obstacle.x;
             obstacles.push(obstacle);
-            distanceSinceLastObstacle = 0;
         }
 
         function drawObstacles() {
             obstacles.forEach(obstacle => {
-                if (chairImg.complete && chairImg.naturalHeight !== 0) {
-                    ctx.drawImage(chairImg, obstacle.x, obstacle.y - obstacle.height, obstacle.width, obstacle.height);
-                } else {
-                    ctx.fillStyle = 'brown';
-                    ctx.fillRect(obstacle.x, obstacle.y - obstacle.height, obstacle.width, obstacle.height);
+                if (obstacleImg.complete) {
+                    ctx.drawImage(obstacleImg, obstacle.x, obstacle.y - obstacle.height, obstacle.width, obstacle.height);
                 }
             });
         }
@@ -115,31 +133,36 @@
                 obstacle.x -= gameSpeed;
             });
 
-            distanceSinceLastObstacle += gameSpeed;
-
-            if (obstacles.length > 0 && obstacles[0].x < -40) {
-                obstacles.shift();
-                score++;
+            if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < canvas.width - minObstacleDistance) {
+                createObstacle();
             }
 
-            if (distanceSinceLastObstacle >= minObstacleDistance && Math.random() < 0.02) {
-                createObstacle();
+            if (obstacles.length > 0 && obstacles[0].x < -90) {
+                obstacles.shift();
+                score++;
             }
         }
 
         function checkCollision() {
             return obstacles.some(obstacle => 
-                dino.x < obstacle.x + obstacle.width &&
-                dino.x + dino.width > obstacle.x &&
-                dino.y - dino.height < obstacle.y &&
-                dino.y > obstacle.y - obstacle.height
+                player.x < obstacle.x + obstacle.width &&
+                player.x + player.width > obstacle.x &&
+                player.y - player.height < obstacle.y &&
+                player.y > obstacle.y - obstacle.height
             );
         }
 
         function drawBackground() {
-            if (backgroundImg.complete && backgroundImg.naturalHeight !== 0) {
+            if (backgroundImg.complete) {
                 ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
             }
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'darkgreen'; // Темно-зеленый цвет
+            ctx.font = '20px Arial'; // Размер шрифта
+            ctx.textAlign = 'center'; // Выравнивание текста по центру
+            ctx.fillText(`Счет: ${score}`, canvas.width / 2, 30); // Положение в центре по горизонтали (canvas.width / 2) и 30 пикселей от верха
         }
 
         function update() {
@@ -149,32 +172,27 @@
 
             drawBackground();
 
-            if (dino.jumping) {
-                const jumpDuration = 60 / dino.jumpSpeed;
-                if (dino.jumpCount < jumpDuration / 2) {
-                    dino.y -= dino.jumpHeight / (jumpDuration / 2);
-                } else if (dino.jumpCount < jumpDuration) {
-                    dino.y += dino.jumpHeight / (jumpDuration / 2);
+            if (player.jumping) {
+                if (player.jumpCount < player.jumpDuration / 2) {
+                    player.y -= player.jumpHeight / (player.jumpDuration / 2);
+                } else if (player.jumpCount < player.jumpDuration) {
+                    player.y += player.jumpHeight / (player.jumpDuration / 2);
                 } else {
-                    dino.jumping = false;
+                    player.jumping = false;
                 }
-                dino.jumpCount++;
+                player.jumpCount++;
             }
 
             updateObstacles();
             drawObstacles();
-            drawDino();
-
-            ctx.fillStyle = 'black';
-            ctx.font = '20px Arial';
-            ctx.fillText(`Счет: ${score}`, 10, 30);
-            ctx.fillText(`Скорость игры: ${gameSpeed}`, 10, 60);
-            ctx.fillText(`Скорость прыжка: ${dino.jumpSpeed.toFixed(1)}`, 10, 90);
+            drawPlayer();
+            drawScore(); // Отображение счета
 
             if (checkCollision()) {
                 ctx.fillStyle = 'red';
-                ctx.font = '40px Arial';
-                ctx.fillText('Игра окончена!', canvas.width / 2 - 100, canvas.height / 2);
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Игра окончена!', canvas.width / 2, canvas.height / 2);
                 gameRunning = false;
                 return;
             }
@@ -183,37 +201,27 @@
         }
 
         function restartGame() {
-            dino = {
-                x: 50,
-                y: canvas.height - 50,
-                width: 150,
-                height: 150,
+            player = {
+                x: 30,
+                y: canvas.height - 170,
+                width: 100,
+                height: 300,
                 jumping: false,
-                jumpHeight: 150,
+                jumpHeight: 250,
                 jumpCount: 0,
-                jumpSpeed: 0.9,  // Reset jump speed to 0.9
-                minJumpSpeed: 0.5,
-                maxJumpSpeed: 2.5
+                jumpDuration: 100
             };
             obstacles = [];
-            gameSpeed = 6;  // Reset game speed to 6
+            gameSpeed = 6;
             score = 0;
-            distanceSinceLastObstacle = 0;
             gameRunning = true;
+            lastObstacleX = 0; // Сбросить позицию последнего препятствия
             update();
         }
 
         document.addEventListener('keydown', (event) => {
             if (event.code === 'Space') {
                 jump();
-            } else if (event.code === 'ArrowUp') {
-                dino.jumpSpeed = Math.min(dino.jumpSpeed + 0.1, dino.maxJumpSpeed);
-            } else if (event.code === 'ArrowDown') {
-                dino.jumpSpeed = Math.max(dino.jumpSpeed - 0.1, dino.minJumpSpeed);
-            } else if (event.code === 'ArrowRight') {
-                gameSpeed = Math.min(gameSpeed + 1, 10);
-            } else if (event.code === 'ArrowLeft') {
-                gameSpeed = Math.max(gameSpeed - 1, 1);
             }
         });
 
