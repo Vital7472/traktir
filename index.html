@@ -88,7 +88,7 @@
         let gameRunning = true;
 
         let minObstacleDistance = 150; // Минимальное расстояние между препятствиями
-        let maxObstacleDistance = 350; // Максимальное расстояние между препятствиями
+        let maxObstacleDistance = 300; // Максимальное расстояние между препятствиями
         let lastObstacleX = 0;
 
         function drawPlayer() {
@@ -105,9 +105,9 @@
         }
 
         function createObstacle() {
-            const obstacleHeight = 180;
+            const obstacleHeight = 160;
             const obstacleY = canvas.height - 120;
-            const obstacleWidth = 90;
+            const obstacleWidth = 80;
             const randomX = canvas.width + Math.random() * (maxObstacleDistance - minObstacleDistance) + minObstacleDistance;
             
             const obstacle = {
