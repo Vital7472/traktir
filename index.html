@@ -70,7 +70,7 @@
             jumping: false,
             jumpHeight: 250,
             jumpCount: 0,
-            jumpDuration: 100 // Увеличиваем продолжительность прыжка
+            jumpDuration: 60 // Увеличиваем продолжительность прыжка
         };
 
         const playerImg = new Image();
@@ -83,7 +83,7 @@
         backgroundImg.src = '5.png';
 
         let obstacles = [];
-        let gameSpeed = 6;
+        let gameSpeed = 8;
         let score = 0;
         let gameRunning = true;
 
@@ -105,9 +105,9 @@
         }
 
         function createObstacle() {
-            const obstacleHeight = 160;
-            const obstacleY = canvas.height - 160;
-            const obstacleWidth = 80;
+            const obstacleHeight = 180;
+            const obstacleY = canvas.height - 120;
+            const obstacleWidth = 90;
             const randomX = canvas.width + Math.random() * (maxObstacleDistance - minObstacleDistance) + minObstacleDistance;
             
             const obstacle = {
@@ -158,13 +158,6 @@
             }
         }
 
-        function drawScore() {
-            ctx.fillStyle = 'darkgreen'; // Темно-зеленый цвет
-            ctx.font = '20px Arial'; // Размер шрифта
-            ctx.textAlign = 'center'; // Выравнивание текста по центру
-            ctx.fillText(`Счет: ${score}`, canvas.width / 2, 30); // Положение в центре по горизонтали (canvas.width / 2) и 30 пикселей от верха
-        }
-
         function update() {
             if (!gameRunning) return;
 
@@ -186,7 +179,13 @@
             updateObstacles();
             drawObstacles();
             drawPlayer();
-            drawScore(); // Отображение счета
+
+            // Настройки для отображения счета
+            ctx.fillStyle = 'darkgreen'; // Темно-зеленый цвет
+            ctx.font = '20px Arial'; // Размер шрифта
+            ctx.textAlign = 'left'; // Выравнивание текста по левому краю
+            console.log(`Drawing score: ${score}`); // Отладочное сообщение
+            ctx.fillText(`Счет: ${score}`, 10, 30); // Положение в левом верхнем углу (10 пикселей от левого края и 30 пикселей от верха)
 
             if (checkCollision()) {
                 ctx.fillStyle = 'red';
@@ -209,10 +208,10 @@
                 jumping: false,
                 jumpHeight: 250,
                 jumpCount: 0,
-                jumpDuration: 100
+                jumpDuration: 60
             };
             obstacles = [];
-            gameSpeed = 6;
+            gameSpeed = 8;
             score = 0;
             gameRunning = true;
             lastObstacleX = 0; // Сбросить позицию последнего препятствия
